@@ -20,7 +20,7 @@ Each service directory contains one or more configuration files that can be used
 # Cloud-Init Scripts
 The root directory contains cloud-init scripts that can be used to automate the deployment of services on cloud instances. Each cloud-init script installs and configures one or more services on an instance. Currently, the following cloud-init scripts are included:
 
-# ELK-setup-cloud-init-script.yml: Installs and configures Elasticsearch and Kibana.
-# Prometheus-setup-cloud-init-script.yml: Installs and configures Prometheus.
+## ELK-setup-cloud-init-script.yml: Installs and configures Elasticsearch and Kibana.
+## Prometheus-setup-cloud-init-script.yml: Installs and configures Prometheus.
 
 To use a cloud-init script, copy the contents of the desired file and paste them into the user data section of your cloud instance creation form or API request. For example, if you are using the AWS EC2 console, you can paste the contents of the cloud-init script into the user data field of the instance creation form.
