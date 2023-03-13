@@ -20,8 +20,8 @@ runcmd:
   - apt-get install elasticsearch logstash kibana -y
 
   # Download configuration files from S3 bucket
-  - wget https://github.com/caxsolindia/cloud-init-config/blob/main/configuration-files/ELK/elasticsearch.yml -O /tmp/elasticsearch.yml
-  - wget https://github.com/caxsolindia/cloud-init-config/blob/main/configuration-files/ELK/kibana.yml -O /tmp/kibana.yml
+  - wget https://raw.githubusercontent.com/caxsolindia/cloud-init-config/main/configuration-files/ELK/elasticsearch.yml -O /tmp/elasticsearch.yml
+  - wget https://raw.githubusercontent.com/caxsolindia/cloud-init-config/main/configuration-files/ELK/kibana.yml -O /tmp/kibana.yml
 
   # Copy configuration files to their respective destinations
   - cp /tmp/elasticsearch.yml /etc/elasticsearch/elasticsearch.yml
