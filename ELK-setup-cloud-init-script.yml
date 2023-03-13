@@ -1,0 +1,36 @@
+#cloud-config
+apt_update: true
+packages:
+  - openjdk-8-jre-headless
+  - apt-transport-https
+  - software-properties-common
+  - awscli
+
+write_files:
+  - content: |
+        deb https://artifacts.elastic.co/packages/7.x/apt stable main
+    path: /etc/apt/sources.list.d/elastic-7.x.list
+
+runcmd:
+  # Add Elastic GPG key and update apt package list
+  - wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | apt-key add -
+  - apt-get update
+
+  # Install Elasticsearch, Logstash, and Kibana
+  - apt-get install elasticsearch logstash kibana -y
+
+  # Download configuration files from S3 bucket
+  - wget https://github.com/caxsolindia/cloud-init-config/blob/main/configuration-files/ELK/elasticsearch.yml -O /tmp/elasticsearch.yml
+  - wget https://github.com/caxsolindia/cloud-init-config/blob/main/configuration-files/ELK/kibana.yml -O /tmp/kibana.yml
+
+  # Copy configuration files to their respective destinations
+  - cp /tmp/elasticsearch.yml /etc/elasticsearch/elasticsearch.yml
+  - cp /tmp/kibana.yml /etc/kibana/kibana.yml
+
+  # Enable and start Elasticsearch, Logstash, and Kibana services
+  - systemctl enable elasticsearch.service
+  - systemctl start elasticsearch.service
+  - systemctl enable logstash.service
+  - systemctl start logstash.service
+  - systemctl enable kibana.service
+  - systemctl start kibana.service
