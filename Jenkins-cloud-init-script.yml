@@ -1,0 +1,34 @@
+#cloud-config
+package_upgrade: true
+packages:
+  - wget
+  - unzip
+ 
+write_files:
+  - path: /tmp/install_java_jenkins.sh
+    content: |
+      #!/bin/bash
+ 
+      # Install OpenJDK 11
+      wget -O /tmp/openjdk.tar.gz https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz
+      tar -xzf /tmp/openjdk.tar.gz -C /opt
+      ln -s /opt/jdk-11.0.2 /opt/java
+      update-alternatives --install /usr/bin/java java /opt/java/bin/java 100
+      update-alternatives --install /usr/bin/javac javac /opt/java/bin/javac 100
+ 
+      # Install Jenkins
+      wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat/jenkins.repo
+      rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+      yum install -y --nogpgcheck jenkins
+ 
+      # Install required fonts for Jenkins
+      yum install -y freetype
+      yum install -y fontconfig
+      find / -name libfreetype.so.6
+ 
+      # Restart and enable Jenkins service
+      systemctl restart jenkins
+      systemctl enable jenkins
+ 
+runcmd:
+  - bash /tmp/install_java_jenkins.sh
