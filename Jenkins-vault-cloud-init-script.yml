@@ -1,0 +1,102 @@
+#cloud-config
+package_upgrade: true
+packages:
+  - wget
+  - unzip
+ 
+write_files:
+  - path: /tmp/install_java_jenkins.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+ 
+      # Install OpenJDK 11
+      wget -O /tmp/openjdk.tar.gz https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz
+      tar -xzf /tmp/openjdk.tar.gz -C /opt
+      ln -s /opt/jdk-11.0.2 /opt/java
+      update-alternatives --install /usr/bin/java java /opt/java/bin/java 100
+      update-alternatives --install /usr/bin/javac javac /opt/java/bin/javac 100
+ 
+      # Install Jenkins
+      wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat/jenkins.repo
+      rpm --import https://pkg.jenkins.io/redhat/jenkins.io.key
+      yum install -y --nogpgcheck jenkins
+ 
+      # Install required fonts for Jenkins
+      yum install -y freetype
+      yum install -y fontconfig
+      find / -name libfreetype.so.6
+ 
+      # Restart and enable Jenkins service
+      systemctl restart jenkins
+      systemctl enable jenkins
+ 
+  - path: /tmp/install_vault.sh
+    permissions: '0755'
+    content: |
+      #!/bin/bash
+      # Download Vault
+      wget https://releases.hashicorp.com/vault/1.6.1/vault_1.6.1_linux_amd64.zip
+      # Unzip Vault
+      unzip vault_1.6.1_linux_amd64.zip
+      # Move Vault executable
+      mv vault /usr/bin
+      # Create directories for Vault configuration and data
+      mkdir -p /etc/vault /var/lib/vault/data
+      # Create Vault configuration file
+      cat << EOF > /etc/vault/config.hcl
+      disable_cache = true
+      disable_mlock = true
+      ui = true
+      listener "tcp" {
+        address          = "0.0.0.0:8200"
+        tls_disable      = 1
+      }
+      storage "file" {
+        path  = "/var/lib/vault/data"
+      }
+      api_addr         = "http://0.0.0.0:8200"
+      max_lease_ttl         = "10h"
+      default_lease_ttl    = "10h"
+      cluster_name         = "vault"
+      raw_storage_endpoint     = true
+      disable_sealwrap     = true
+      disable_printable_check = true
+      EOF
+      # Create Vault service file
+      cat << EOF > /etc/systemd/system/vault.service
+      [Unit]
+      Description="HashiCorp Vault - A tool for managing secrets"
+      Documentation=https://www.vaultproject.io/docs/
+      Requires=network-online.target
+      After=network-online.target
+      ConditionFileNotEmpty=/etc/vault/config.hcl
+      [Service]
+      ProtectSystem=full
+      ProtectHome=read-only
+      PrivateTmp=yes
+      PrivateDevices=yes
+      SecureBits=keep-caps
+      AmbientCapabilities=CAP_IPC_LOCK
+      NoNewPrivileges=yes
+      ExecStart=/usr/bin/vault server -config=/etc/vault/config.hcl
+      ExecReload=/bin/kill --signal HUP 
+      KillMode=process
+      KillSignal=SIGINT
+      Restart=on-failure
+      RestartSec=5
+      TimeoutStopSec=30
+      StartLimitBurst=3
+      LimitNOFILE=6553
+      [Install]
+      WantedBy=multi-user.target
+      EOF
+      # Enable and start Vault service
+      systemctl daemon-reload
+      systemctl start vault
+      systemctl enable vault
+      systemctl restart vault
+ 
+runcmd:
+  - /bin/bash /tmp/install_vault.sh
+  - /bin/bash /tmp/install_java_jenkins.sh
